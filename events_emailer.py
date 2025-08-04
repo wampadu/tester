@@ -7,6 +7,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
+from playwright_stealth import stealth_sync
 
 # === Calculate Upcoming Friday–Sunday Dates ===
 def get_upcoming_weekend_dates():
@@ -144,4 +145,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
