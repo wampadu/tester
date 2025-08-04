@@ -1,5 +1,6 @@
 import os
 import random
+import tempfile
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import html
@@ -9,7 +10,6 @@ from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from playwright_stealth import stealth_sync
 from playwright.sync_api import sync_playwright
-from playwright_stealth import stealth_sync
 
 # === Calculate Upcoming Friday–Sunday Dates ===
 def get_upcoming_weekend_dates():
@@ -112,13 +112,15 @@ def send_email_with_attachment(to_email, subject, html_path):
 def main():
     dates = get_upcoming_weekend_dates()
     print(f"📆 Scraping for: {[d.strftime('%Y-%m-%d') for d in dates]}")
-    chrome_path = os.path.abspath("fingerprint-browser/chrome.exe")
     all_events = []
 
+    # Use temporary user data dir (Chrome profile)
+    user_data_dir = tempfile.mkdtemp()
+
     with sync_playwright() as p:
-        browser = p.chromium.launch(
+        browser = p.chromium.launch_persistent_context(
+            user_data_dir=user_data_dir,
             headless=False,
-            executable_path=chrome_path,
             args=["--no-sandbox", "--disable-dev-shm-usage"]
         )
         page = browser.new_page()
@@ -147,8 +149,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
