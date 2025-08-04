@@ -205,10 +205,7 @@ async def scrape_eventbrite(page):
     start_str = dates[0].strftime("%Y-%m-%d")
     end_str = dates[-1].strftime("%Y-%m-%d")
     url = (
-        "https://api.scraperapi.com"
-        f"?api_key=46f16739ebbc381529ebfd21f01061dd"
         f"&url=https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
-        "&render=true"
     )
     await page.goto(url)
     print(await page.content())
@@ -310,10 +307,12 @@ async def aggregate_events():
         browser = await p.chromium.launch(
             headless=False,
             proxy={
-                "server": "http://23.95.150.145:6114",
+                "server": "198.23.239.134:6540",
                 "username": "gspobvsx",
                 "password": "txs7bgx3vdfq"
             }
+            
+            
         )
         page = await browser.new_page()
         all_events += await scrape_eventbrite(page)
@@ -344,6 +343,7 @@ async def aggregate_events():
 
 if __name__ == "__main__":
     asyncio.run(aggregate_events())
+
 
 
 
