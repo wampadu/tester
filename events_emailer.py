@@ -198,7 +198,7 @@ def generate_html(events):
     return html_output
 
 # === Scrapers ===
-async def scrape_eventbrite(page):
+def scrape_eventbrite(page):
     print("🔍 Scraping Eventbrite...")
     events = []
     target_dates = [(d.strftime('%b %d')) for d in get_upcoming_weekend_dates()]
@@ -596,6 +596,12 @@ async def aggregate_events():
     )
 
 
+def random_user_agent():
+    return random.choice([
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/115.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/114.0.0.0 Safari/537.36"
+    ])
+
 def tester():
     dates = get_upcoming_weekend_dates()
     print(f"📆 Scraping for: {[d.strftime('%Y-%m-%d') for d in dates]}")
@@ -610,12 +616,6 @@ def tester():
         page = context.new_page()
         all_events += scrape_eventbrite(page)
         browser.close()
-
-def random_user_agent():
-    return random.choice([
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/115.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/114.0.0.0 Safari/537.36"
-    ])
 
 if __name__ == "__main__":
     tester()
