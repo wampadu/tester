@@ -198,6 +198,7 @@ def generate_html(events):
     return html_output
 
 # === Scrapers ===
+# === Scrapers ===
 def scrape_eventbrite(page):
     print("🔍 Scraping Eventbrite...")
     events = []
@@ -206,41 +207,41 @@ def scrape_eventbrite(page):
     start_str = dates[0].strftime("%Y-%m-%d")
     end_str = dates[-1].strftime("%Y-%m-%d")
     url = f"https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
-    await page.goto(url)
+    page.goto(url)
 
     while True:
         print("🔄 Scrolling to load events on current page...")
         prev_height = 0
         retries = 0
         while retries < 5:
-            await page.mouse.wheel(0, 5000)
-            await asyncio.sleep(1.2)
-            curr_height = await page.evaluate("document.body.scrollHeight")
+            page.mouse.wheel(0, 5000)
+            page.wait_for_timeout(1200)
+            curr_height = page.evaluate("document.body.scrollHeight")
             if curr_height == prev_height:
                 retries += 1
             else:
                 retries = 0
                 prev_height = curr_height
 
-        cards = await page.query_selector_all("li [data-testid='search-event']")
+        cards = page.query_selector_all("li [data-testid='search-event']")
         print(f"🧾 Found {len(cards)} event cards on this page.")
 
         for card in cards:
             try:
-                title_el = await card.query_selector("h3")
-                title = (await title_el.inner_text()).strip() if title_el else "N/A"
+                title_el = card.query_selector("h3")
+                title = title_el.inner_text().strip() if title_el else "N/A"
 
-                date_el = await card.query_selector("p:nth-of-type(1)")
-                date_text = (await date_el.inner_text()).strip() if date_el else "N/A"
+                date_el = card.query_selector("p:nth-of-type(1)")
+                date_text = date_el.inner_text().strip() if date_el else "N/A"
 
-                img_el = await card.query_selector("img.event-card-image")
-                img_url = await img_el.get_attribute("src") if img_el else ""
+                img_el = card.query_selector("img.event-card-image")
+                img_url = img_el.get_attribute("src") if img_el else ""
 
-                link_el = await card.query_selector("a.event-card-link")
-                link = await link_el.get_attribute("href") if link_el else ""
+                link_el = card.query_selector("a.event-card-link")
+                link = link_el.get_attribute("href") if link_el else ""
 
-                price_el = await card.query_selector("div[class*='priceWrapper'] p")
-                price = (await price_el.inner_text()).strip() if price_el else "Free"
+                price_el = card.query_selector("div[class*='priceWrapper'] p")
+                price = price_el.inner_text().strip() if price_el else "Free"
 
                 events.append({
                     "title": title,
@@ -255,17 +256,18 @@ def scrape_eventbrite(page):
                 print("⚠️ Error extracting event:", e)
 
         try:
-            next_btn = await page.query_selector('[data-testid="page-next"]:not([aria-disabled="true"])')
+            next_btn = page.query_selector('[data-testid="page-next"]:not([aria-disabled="true"])')
             if next_btn:
                 print("➡️ Going to next page...")
-                await next_btn.click()
-                await asyncio.sleep(2)
+                next_btn.click()
+                page.wait_for_timeout(2000)
             else:
                 print("🛑 No more pages.")
                 break
         except Exception as e:
             print("⚠️ Pagination error:", e)
             break
+
     print(f"✅ Finished scraping. Found {len(events)} events.")
     return events
 
