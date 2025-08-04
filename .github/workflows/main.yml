@@ -27,6 +27,11 @@ jobs:
       run: |
         python -m playwright install chromium
 
+    - name: ✅ Install Async Stealth Fork
+      run: |
+        pip uninstall -y playwright_stealth
+        pip install git+https://github.com/AtuboDad/playwright_stealth.git
+
     - name: 🧪 Run Python Scraper (with xvfb for headful mode)
       env:
         GMAIL_USER: ${{ secrets.GMAIL_USER }}
