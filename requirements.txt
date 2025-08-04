@@ -3,3 +3,5 @@ undetected-chromedriver
 bs4
 lxml
 requests
+python-dateutil
+
