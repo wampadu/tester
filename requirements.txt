@@ -3,5 +3,6 @@ playwright-stealth
 beautifulsoup4
 lxml
 requests
-git+https://github.com/berkeozerr/playwright-stealth-sync.git
+git+https://github.com/AtuboDad/playwright_stealth.git
+
 
