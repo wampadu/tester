@@ -11,6 +11,8 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
+from playwright.sync_api import sync_playwright
+import random
 
 
 # === Calculate Upcoming Friday–Sunday Dates ===
@@ -595,6 +597,9 @@ async def aggregate_events():
         html_path="weekend_events_toronto.html"
     )
 
+
+
 if __name__ == "__main__":
     asyncio.run(aggregate_events())
+
 
