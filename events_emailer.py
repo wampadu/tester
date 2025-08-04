@@ -541,14 +541,14 @@ async def aggregate_events():
     all_events = []
 
     with sync_playwright() as p:
-    browser = p.chromium.launch(
-        headless=False,
-        args=["--disable-blink-features=AutomationControlled"]
-    )
-    context = browser.new_context(user_agent=random_user_agent())
-    page = context.new_page()
-    all_events += scrape_eventbrite(page)
-    browser.close()
+        browser = p.chromium.launch(
+            headless=False,
+            args=["--disable-blink-features=AutomationControlled"]
+        )
+        context = browser.new_context(user_agent=random_user_agent())
+        page = context.new_page()
+        all_events += scrape_eventbrite(page)
+        browser.close()
             
     async with async_playwright() as p:
 
@@ -617,6 +617,7 @@ def random_user_agent():
 
 if __name__ == "__main__":
     asyncio.run(aggregate_events())
+
 
 
 
