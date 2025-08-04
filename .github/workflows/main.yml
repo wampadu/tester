@@ -26,7 +26,7 @@ jobs:
       - name: Download UCDriver
         run: |
           mkdir -p driver
-          wget https://github.com/ultrafunkamsterdam/undetected-chromedriver/releases/latest/download/chromedriver-linux64.zip -O driver/chromedriver.zip
+          wget https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.105/linux64/chromedriver-linux64.zip -O driver/chromedriver.zip
           unzip driver/chromedriver.zip -d driver
           chmod +x driver/chromedriver
 
