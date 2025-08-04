@@ -42,8 +42,8 @@ def scrape_eventbrite(page):
     retries = 0
     prev_height = 0
     while retries < 5:
-        page.mouse.wheel(0, 5000)
-        page.wait_for_timeout(1200)
+        page.mouse.wheel(0, random.randint(3000, 6000))
+        page.wait_for_timeout(random.randint(1000, 2000))
         curr_height = page.evaluate("document.body.scrollHeight")
         if curr_height == prev_height:
             retries += 1
@@ -114,29 +114,45 @@ def main():
     print(f"📆 Scraping for: {[d.strftime('%Y-%m-%d') for d in dates]}")
     all_events = []
 
-    # Use temporary user data dir (Chrome profile)
     user_data_dir = tempfile.mkdtemp()
 
     with sync_playwright() as p:
         browser = p.chromium.launch_persistent_context(
-            user_data_dir="/tmp/profile",
+            user_data_dir=user_data_dir,
             headless=False,
             args=[
-              "--disable-blink-features=AutomationControlled",
-              "--disable-dev-shm-usage",
-              "--no-sandbox",
-              "--disable-extensions",
-              "--disable-infobars",
-              "--lang=en-US,en",
-              "--window-size=1920,1080",
-              "--start-maximized",
-              "--font-render-hinting=none",
-              "--disable-gpu",
-              "--hide-scrollbars",
-              "--mute-audio"
-            ]
+                "--disable-blink-features=AutomationControlled",
+                "--disable-dev-shm-usage",
+                "--no-sandbox",
+                "--disable-extensions",
+                "--disable-infobars",
+                "--lang=en-US,en",
+                "--window-size=1920,1080",
+                "--start-maximized",
+                "--font-render-hinting=none",
+                "--disable-gpu",
+                "--hide-scrollbars",
+                "--mute-audio",
+                "--disable-features=IsolateOrigins,site-per-process"
+            ],
+            locale="en-US",
+            timezone_id="America/Toronto",
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
+
         page = browser.new_page()
+
+        # Optional: Block bot-detection scripts
+        page.route("**/*", lambda route, request: (
+            route.abort() if any(x in request.url for x in ["captcha", "botd", "challenge"]) else route.continue_()
+        ))
+
+        # Optional: Human-like movement
+        page.mouse.move(random.randint(100, 500), random.randint(100, 500))
+        page.wait_for_timeout(random.randint(300, 700))
+        page.keyboard.type("Hello Eventbrite")
+        page.wait_for_timeout(random.randint(500, 900))
+
         all_events += scrape_eventbrite(page)
         browser.close()
 
@@ -162,5 +178,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
