@@ -120,7 +120,7 @@ def main():
     with sync_playwright() as p:
         browser = p.chromium.launch_persistent_context(
             user_data_dir=user_data_dir,
-            headless=False,
+            headless=True,
             args=["--no-sandbox", "--disable-dev-shm-usage"]
         )
         page = browser.new_page()
@@ -149,3 +149,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
