@@ -26,6 +26,8 @@ def scrape_eventbrite(page):
     end_str = dates[-1].strftime("%Y-%m-%d")
     url = f"https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
     page.goto(url, timeout=60000)
+    page.mouse.move(100, 100)
+    page.wait_for_timeout(2000)
     print("🔎 Page preview:\n", page.content()[:1000])
 
     while True:
@@ -83,8 +85,11 @@ def scrape_eventbrite(page):
 
 def main():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+        browser = p.chromium.launch(headless=False, channel="chrome")
+        context = browser.new_context(
+        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        viewport={"width": 1280, "height": 800}
+        )
         page = context.new_page()
         stealth_sync(page)
         events = scrape_eventbrite(page)
@@ -97,3 +102,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
