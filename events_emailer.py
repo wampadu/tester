@@ -611,10 +611,16 @@ def tester():
         all_events += scrape_eventbrite(page)
         browser.close()
 
+def random_user_agent():
+    return random.choice([
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/115.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/114.0.0.0 Safari/537.36"
+    ])
 
 if __name__ == "__main__":
     tester()
     #asyncio.run(aggregate_events())
+
 
 
 
