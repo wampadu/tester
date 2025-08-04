@@ -20,6 +20,12 @@ def scrape_eventbrite_toronto(search_term="music"):
     url = f"https://www.eventbrite.ca/d/canada--toronto/{search_term}/"
     print(f"🔍 Fetching: {url}")
     response = requests.get(url, timeout=30)
+    
+    # 💡 Log full HTML content for debugging
+    with open("eventbrite_page_debug.html", "w", encoding="utf-8") as debug_file:
+        debug_file.write(response.text)
+    print("📄 Page HTML saved to eventbrite_page_debug.html")
+
     soup = BeautifulSoup(response.content, "html.parser")
     events = soup.find_all("div", class_="search-event-card-wrapper")
 
