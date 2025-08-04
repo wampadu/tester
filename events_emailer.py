@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import html
 import os
 import smtplib
+import time
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
@@ -35,7 +36,17 @@ def scrape_eventbrite():
 
     url = f"https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
     payload = {'api_key': api_key, 'url': url}
-    response = requests.get("http://api.scraperapi.com", params=payload)
+
+    # Retry logic
+    for attempt in range(3):
+        response = requests.get("http://api.scraperapi.com", params=payload)
+        if response.status_code == 200:
+            break
+        print(f"🔁 Retry {attempt+1}/3 failed with status: {response.status_code}")
+        time.sleep(2)
+    else:
+        print("❌ ScraperAPI failed after retries")
+        return events
 
     soup = BeautifulSoup(response.text, "html.parser")
     cards = soup.select("li[data-testid='search-event']")
@@ -52,6 +63,8 @@ def scrape_eventbrite():
 
             link_el = card.select_one("a.event-card-link")
             link = link_el['href'] if link_el else ""
+            if link and link.startswith("/"):
+                link = "https://www.eventbrite.ca" + link
 
             price_el = card.select_one("div[class*='priceWrapper'] p")
             price = price_el.get_text(strip=True) if price_el else "Free"
@@ -67,6 +80,8 @@ def scrape_eventbrite():
             })
         except Exception as e:
             print("⚠️ Error parsing event:", e)
+
+    print(f"🧠 Total scraped from Eventbrite: {len(events)}")
     return events
 
 # === Email ===
@@ -89,6 +104,7 @@ def send_email_with_attachment(to_email, subject, html_path):
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.login(from_email, app_password)
         server.send_message(msg)
+
     print("📧 Email sent!")
 
 # === Main ===
@@ -97,6 +113,7 @@ def main():
     print(f"📆 Scraping for: {[d.strftime('%Y-%m-%d') for d in dates]}")
     all_events = scrape_eventbrite()
 
+    # Deduplicate
     seen_titles = set()
     deduped_events = []
     for event in all_events:
@@ -106,12 +123,14 @@ def main():
             deduped_events.append(event)
     all_events = deduped_events
 
+    # Save HTML
     html_output = generate_html(all_events)
     output_path = "weekend_events_toronto.html"
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_output)
     print("✅ File saved:", output_path)
 
+    # Send email
     send_email_with_attachment(
         to_email=os.getenv("EMAIL_TO"),
         subject=f"🎉 Toronto Weekend Events – {dates[0].strftime('%B %d')}-{dates[-1].strftime('%d, %Y')}",
