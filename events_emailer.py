@@ -11,6 +11,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
+from urllib.parse import quote_plus
 
 
 # === Calculate Upcoming Friday–Sunday Dates ===
@@ -205,13 +206,14 @@ async def scrape_eventbrite(page):
     start_str = dates[0].strftime("%Y-%m-%d")
     end_str = dates[-1].strftime("%Y-%m-%d")
 
+    eventbrite_url = f"https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
+    encoded_url = quote_plus(eventbrite_url)
     scrapingbee_api = "OCK0UKE0UHXYYAU88HJ9V2K0WSC6H91RVE16LV5SUXJ3N7KEONY1RNDNMQ0PR2MUL0LS1DU4NZCH92X8"
-    target_url = f"https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
     
     proxy_url = (
         f"https://app.scrapingbee.com/api/v1/"
         f"?api_key={scrapingbee_api}"
-        f"&url={target_url}"
+        f"&url={encoded_url}"
         f"&render_js=true"
         f"&premium_proxy=true"
     )
@@ -344,6 +346,7 @@ async def aggregate_events():
 
 if __name__ == "__main__":
     asyncio.run(aggregate_events())
+
 
 
 
