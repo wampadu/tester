@@ -1,8 +1,5 @@
-playwright
-playwright-stealth
-beautifulsoup4
+selenium
+undetected-chromedriver
+bs4
 lxml
 requests
-git+https://github.com/AtuboDad/playwright_stealth.git
-
-
