@@ -31,12 +31,13 @@ jobs:
         mv driver/chromedriver-linux64/chromedriver driver/chromedriver
         chmod +x driver/chromedriver
 
-    - name: 📥 Download Undetectable Fingerprint Browser
+    - name: 🧰 Download and extract fingerprint browser
       run: |
+        sudo apt-get update
+        sudo apt-get install -y p7zip-full
         mkdir -p fingerprint-browser
-        wget https://github.com/itbrowser-net/undetectable-fingerprint-browser/releases/download/v1.0.0/fingerprint_browser_v1.0.zip -O fingerprint-browser/fingerprint_browser.zip
-        unzip fingerprint-browser/fingerprint_browser.zip -d fingerprint-browser/
-        chmod +x fingerprint-browser/chrome-linux/chrome
+        wget https://github.com/itbrowser-net/undetectable-fingerprint-browser/releases/download/v1.0.0/fingerprint_browser_v1.0.7z -O fingerprint-browser/browser.7z
+        7z x fingerprint-browser/browser.7z -ofingerprint-browser
 
     - name: 🧼 Set CHROMEDRIVER env variable
       run: echo "CHROMEDRIVER=$(pwd)/driver/chromedriver" >> $GITHUB_ENV
