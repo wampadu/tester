@@ -4,5 +4,6 @@ bs4
 lxml
 requests
 python-dateutil
+git+https://github.com/AtuboDad/playwright_stealth.git
 
 
