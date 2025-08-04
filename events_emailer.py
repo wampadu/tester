@@ -27,21 +27,21 @@ def scrape_eventbrite(page):
     url = f"https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
     page.goto(url, timeout=60000)
 
+    seen_titles = set()
     while True:
-        # Scroll to load more events on the current page
-        print("🔄 Scrolling...")
-        retries, prev_height = 0, 0
-        while retries < 3:
-            page.mouse.wheel(0, 3000)
-            page.wait_for_timeout(1500)
+        print("🔄 Scrolling to load events on current page...")
+        retries = 0
+        prev_height = 0
+        while retries < 5:
+            page.mouse.wheel(0, 5000)
+            page.wait_for_timeout(1200)
             curr_height = page.evaluate("document.body.scrollHeight")
             if curr_height == prev_height:
                 retries += 1
             else:
-                retries = 0
                 prev_height = curr_height
+                retries = 0
 
-        # Extract events
         cards = page.query_selector_all("li [data-testid='search-event']")
         print(f"🧾 Found {len(cards)} event cards on this page.")
 
@@ -49,6 +49,10 @@ def scrape_eventbrite(page):
             try:
                 title_el = card.query_selector("h3")
                 title = title_el.inner_text().strip() if title_el else "N/A"
+                if title in seen_titles:
+                    continue
+                seen_titles.add(title)
+
                 date_el = card.query_selector("p:nth-of-type(1)")
                 date = date_el.inner_text().strip() if date_el else "N/A"
                 link_el = card.query_selector("a.event-card-link")
@@ -56,28 +60,27 @@ def scrape_eventbrite(page):
                 price_el = card.query_selector("div[class*='priceWrapper'] p")
                 price = price_el.inner_text().strip() if price_el else "Free"
 
-                event = {
+                events.append({
                     "title": title,
                     "date": date,
                     "price": price,
                     "url": link,
                     "source": "Eventbrite"
-                }
-                if event not in events:
-                    events.append(event)
+                })
             except Exception as e:
                 print("⚠️ Error extracting event:", e)
 
-        # Check for next page
-        next_btn = page.query_selector('[aria-label="Next page"]:not([disabled])')
+        # Try to find and click the "Next" button
+        next_btn = page.query_selector('[data-testid="page-next"]:not([aria-disabled="true"])')
         if next_btn:
-            print("➡️ Moving to next page...")
+            print("➡️ Going to next page...")
             next_btn.click()
-            page.wait_for_timeout(3000)
+            page.wait_for_timeout(2000)
         else:
             print("🛑 No more pages.")
             break
 
+    print(f"✅ Finished scraping. Found {len(events)} events.")
     return events
 
 def main():
@@ -102,4 +105,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
