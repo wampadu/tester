@@ -4,4 +4,6 @@ bs4
 lxml
 requests
 python-dateutil
+fake-browser-profile
+
 
