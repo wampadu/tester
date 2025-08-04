@@ -35,7 +35,9 @@ def parse_event_card(card):
         return None
 
 def scrape_eventbrite_toronto():
-    friday, sunday = get_upcoming_weekend_dates()
+    dates = get_upcoming_weekend_dates()
+    friday = dates[0]
+    sunday = dates[-1]
     start_date = friday.strftime("%Y-%m-%d")
     end_date = sunday.strftime("%Y-%m-%d")
 
@@ -79,3 +81,4 @@ if __name__ == "__main__":
     events = scrape_eventbrite_toronto()
     html = generate_html(events)
     save_html_file(html)
+
