@@ -614,7 +614,8 @@ def tester():
 
 if __name__ == "__main__":
     tester()
-    asyncio.run(aggregate_events())
+    #asyncio.run(aggregate_events())
+
 
 
 
