@@ -1,16 +1,17 @@
-name: Toronto Selenium Events
+name: Toronto Weekend Events
 
 on:
   schedule:
-    - cron: '0 10 * * 5'  # Every Friday 6:00 AM EST
+    - cron: '0 10 * * 5'  # Every Friday at 6:00 AM EST / 10:00 UTC
   workflow_dispatch:
 
 jobs:
-  selenium-scrape:
+  scrape-and-email:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -19,18 +20,26 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Download UCDriver
+        run: |
+          mkdir -p driver
+          wget https://github.com/ultrafunkamsterdam/undetected-chromedriver/releases/latest/download/chromedriver-linux64.zip -O driver/chromedriver.zip
+          unzip driver/chromedriver.zip -d driver
+          chmod +x driver/chromedriver
 
       - name: Run scraper
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_TO:   ${{ secrets.EMAIL_TO }}
         run: |
-          python eventbrite_selenium_scraper.py
+          python events_emailer.py
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: toronto-eventbrite-events
           path: selenium_eventbrite_events.html
