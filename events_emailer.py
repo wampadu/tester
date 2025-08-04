@@ -48,6 +48,7 @@ def scrape_eventbrite():
         print("❌ ScraperAPI failed after retries")
         return events
 
+    print(response.text)
     soup = BeautifulSoup(response.text, "html.parser")
     cards = soup.select("li[data-testid='search-event']")
     for card in cards:
@@ -139,3 +140,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
