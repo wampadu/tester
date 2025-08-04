@@ -38,7 +38,7 @@ jobs:
       env:
         CHROMEDRIVER: ${{ env.CHROMEDRIVER }}
       run: |
-        python your_script.py
+        python events_emailer.py
 
     - name: 📤 Upload output HTML
       uses: actions/upload-artifact@v4
