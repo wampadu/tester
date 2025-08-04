@@ -1,87 +1,61 @@
+from datetime import datetime, timedelta
+from dateutil.parser import parse, ParserError
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime, timedelta
-from dateutil.parser import parse
-import os
 
-def get_upcoming_weekend_dates():
-    today = datetime.today()
-    friday = today + timedelta((4 - today.weekday()) % 7 + 7)
-    saturday = friday + timedelta(days=1)
-    sunday = friday + timedelta(days=2)
-    return friday, saturday, sunday
-
-def get_event_pages(search_url):
-    response = requests.get(search_url, timeout=30, headers={
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-    })
-    soup = BeautifulSoup(response.content, "html.parser")
-    pagination = soup.select("ul.pagination__list li")
-    if pagination:
-        pages = [li.get_text(strip=True) for li in pagination if li.get_text(strip=True).isdigit()]
-        return int(pages[-1]) if pages else 1
-    return 1
-
-def parse_event_card(card):
+def parse_event_date(raw_text):
     try:
-        title = card.select_one("div.eds-event-card__formatted-name--is-clamped").text.strip()
-        url = card.find("a", class_="eds-event-card-content__action-link")["href"]
-        date = card.select_one("div.eds-event-card-content__sub-title").text.strip()
-        location_el = card.select_one("div.card-text--truncated__one")
-        location = location_el.text.strip() if location_el else "Toronto"
-        return {"title": title, "url": url, "date": date, "location": location}
-    except Exception as e:
-        print(f"⚠️ Skipping malformed event: {e}")
-        return None
+        if "Tomorrow" in raw_text:
+            time_part = raw_text.split()[-1]
+            return parse(str(datetime.today().date() + timedelta(days=1)) + ' ' + time_part)
+        elif "Today" in raw_text:
+            time_part = raw_text.split()[-1]
+            return parse(str(datetime.today().date()) + ' ' + time_part)
+        else:
+            return parse(raw_text)
+    except ParserError:
+        return "N/A"
 
-def scrape_eventbrite_toronto():
-    dates = get_upcoming_weekend_dates()
-    friday = dates[0]
-    sunday = dates[-1]
-    start_date = friday.strftime("%Y-%m-%d")
-    end_date = sunday.strftime("%Y-%m-%d")
+def scrape_eventbrite_toronto(search_term="music"):
+    url = f"https://www.eventbrite.ca/d/canada--toronto/{search_term}/"
+    print(f"🔍 Fetching: {url}")
+    response = requests.get(url, timeout=30)
+    soup = BeautifulSoup(response.content, "html.parser")
+    events = soup.find_all("div", class_="search-event-card-wrapper")
 
-    base_url = f"https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_date}&end_date={end_date}"
-    max_pages = get_event_pages(base_url)
-    print(f"🔢 Found {max_pages} pages of events.")
+    results = []
+    for e in events:
+        try:
+            title = e.find("div", class_="eds-is-hidden-accessible").get_text(strip=True)
+            date_raw = e.select_one(".eds-event-card-content__sub-title")
+            date = parse_event_date(date_raw.get_text(strip=True)) if date_raw else "N/A"
+            location = e.find("div", attrs={"data-subcontent-key": "location"}).get_text(strip=True).split("•")[-1]
+            link = e.find("a", class_="eds-event-card-content__action-link")["href"]
 
-    all_events = []
+            results.append({
+                "title": title,
+                "date": date,
+                "location": location,
+                "url": link
+            })
+        except Exception as ex:
+            print("⚠️ Skipping event due to parsing error:", ex)
 
-    for page in range(1, max_pages + 1):
-        page_url = f"{base_url}&page={page}"
-        print(f"📄 Scraping page {page}...")
-        response = requests.get(page_url, timeout=30, headers={
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-        })
-        soup = BeautifulSoup(response.content, "html.parser")
-        cards = soup.select("div.search-event-card-wrapper")
+    return results
 
-        for card in cards:
-            event = parse_event_card(card)
-            if event:
-                all_events.append(event)
-
-    print(f"✅ Total events scraped: {len(all_events)}")
-    return all_events
-
-def generate_html(events):
-    dates = get_upcoming_weekend_dates()
-    friday = dates[0]
-    sunday = dates[-1]
-    html = f"<h2>Toronto Weekend Events – {friday.strftime('%b %d')} to {sunday.strftime('%b %d')}</h2><ul>"
+def save_as_html(events, filename="eventbrite_simple_test.html"):
+    html = "<h2>Toronto Eventbrite Events</h2><ul>"
     for e in events:
         html += f"<li><a href='{e['url']}'>{e['title']}</a> – {e['date']} – {e['location']}</li>"
     html += "</ul>"
-    return html
 
-def save_html_file(html, filename="eventbrite_hybrid_events.html"):
     with open(filename, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"✅ File saved: {filename}")
 
 if __name__ == "__main__":
     events = scrape_eventbrite_toronto()
-    html = generate_html(events)
-    save_html_file(html)
-
-
+    if events:
+        save_as_html(events)
+    else:
+        print("😕 No events found.")
