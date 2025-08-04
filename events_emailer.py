@@ -205,7 +205,7 @@ async def scrape_eventbrite(page):
     start_str = dates[0].strftime("%Y-%m-%d")
     end_str = dates[-1].strftime("%Y-%m-%d")
     url = (
-        f"&url=https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
+        f"https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
     )
     await page.goto(url)
     print(await page.content())
@@ -343,6 +343,7 @@ async def aggregate_events():
 
 if __name__ == "__main__":
     asyncio.run(aggregate_events())
+
 
 
 
