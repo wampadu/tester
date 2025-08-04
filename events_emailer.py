@@ -34,6 +34,8 @@ def scrape_eventbrite():
     retries = 0
     prev_height = 0
 
+    print(driver.page_source[:6000])  
+
     while retries < 5:
         driver.find_element(By.TAG_NAME, 'body').send_keys(Keys.END)
         time.sleep(1.2)
@@ -104,3 +106,4 @@ if __name__ == "__main__":
     if os.getenv("EMAIL_TO"):
         send_email(html_output)
         print("📧 Email sent!")
+
