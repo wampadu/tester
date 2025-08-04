@@ -1,28 +1,36 @@
-name: Fresh VM Scraper
+name: Toronto Selenium Events
 
 on:
   schedule:
-    - cron: '0 14 * * 5'  # Every Friday at 10 AM Toronto time
+    - cron: '0 10 * * 5'  # Every Friday 6:00 AM EST
   workflow_dispatch:
 
 jobs:
-  run-on-clean-vm:
-    runs-on: ubuntu-latest  # Each run gets a new VM
-
+  selenium-scrape:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          playwright install --with-deps
 
-      - name: Run scraper with XVFB and stealth
+      - name: Run scraper
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
         run: |
-          xvfb-run -a python events_emailer.py
+          python eventbrite_selenium_scraper.py
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: toronto-eventbrite-events
+          path: selenium_eventbrite_events.html
