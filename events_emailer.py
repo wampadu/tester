@@ -535,7 +535,7 @@ def send_email_with_attachment(to_email, subject, html_path):
     print("📧 Email sent!")
 
 # === Main Runner ===
-async def aggregate_events():
+def aggregate_events():
     dates = get_upcoming_weekend_dates()
     print(f"📆 Scraping for: {[d.strftime('%Y-%m-%d') for d in dates]}")
     all_events = []
@@ -549,7 +549,7 @@ async def aggregate_events():
         page = context.new_page()
         all_events += scrape_eventbrite(page)
         browser.close()
-            
+    /*        
     async with async_playwright() as p:
 
         browser = await p.chromium.launch(
@@ -575,6 +575,7 @@ async def aggregate_events():
         page = await browser.new_page()
         #all_events += await scrape_eventbrite(page)
         await browser.close()
+        */
 
         browser = await p.chromium.launch(headless=True, slow_mo=50)
         page = await browser.new_page()
@@ -617,6 +618,7 @@ def random_user_agent():
 
 if __name__ == "__main__":
     asyncio.run(aggregate_events())
+
 
 
 
