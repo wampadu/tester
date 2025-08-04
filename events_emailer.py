@@ -539,6 +539,17 @@ async def aggregate_events():
     dates = get_upcoming_weekend_dates()
     print(f"📆 Scraping for: {[d.strftime('%Y-%m-%d') for d in dates]}")
     all_events = []
+
+    with sync_playwright() as p:
+    browser = p.chromium.launch(
+        headless=False,
+        args=["--disable-blink-features=AutomationControlled"]
+    )
+    context = browser.new_context(user_agent=random_user_agent())
+    page = context.new_page()
+    all_events += scrape_eventbrite(page)
+    browser.close()
+            
     async with async_playwright() as p:
 
         browser = await p.chromium.launch(
@@ -562,7 +573,7 @@ async def aggregate_events():
             bypass_csp=True
         )
         page = await browser.new_page()
-        all_events += await scrape_eventbrite(page)
+        #all_events += await scrape_eventbrite(page)
         await browser.close()
 
         browser = await p.chromium.launch(headless=True, slow_mo=50)
@@ -598,8 +609,14 @@ async def aggregate_events():
     )
 
 
+def random_user_agent():
+    return random.choice([
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/115.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/114.0.0.0 Safari/537.36"
+    ])
 
 if __name__ == "__main__":
     asyncio.run(aggregate_events())
+
 
 
