@@ -92,7 +92,14 @@ def main():
         with open("eventbrite_stealth_events.html", "w", encoding="utf-8") as f:
             f.write(html_data)
         print("✅ Saved to eventbrite_stealth_events.html")
+        
+        with open("eventbrite_stealth_events.html", "r", encoding="utf-8") as f:
+            content = f.read()
+            max_chars = 5000  # ⛔ Set your desired limit here
+            print("\n🔍 Preview (capped):\n")
+            print(content[:max_chars])
         browser.close()
 
 if __name__ == "__main__":
     main()
+
