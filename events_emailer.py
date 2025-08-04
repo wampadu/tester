@@ -112,7 +112,7 @@ def send_email_with_attachment(to_email, subject, html_path):
 def main():
     dates = get_upcoming_weekend_dates()
     print(f"📆 Scraping for: {[d.strftime('%Y-%m-%d') for d in dates]}")
-    chrome_path = os.path.abspath("fingerprint-browser/chrome-linux/chrome")
+    chrome_path = os.path.abspath("fingerprint-browser/browser/chrome")
     all_events = []
 
     with sync_playwright() as p:
@@ -147,6 +147,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
