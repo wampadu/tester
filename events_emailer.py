@@ -1,66 +1,36 @@
-from datetime import datetime, timedelta
-from dateutil.parser import parse, ParserError
-import requests
+from fake_browser_profile.fake_profile import FakeProfile
+from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
+import undetected_chromedriver as uc
+import time
 
-def parse_event_date(raw_text):
-    try:
-        if "Tomorrow" in raw_text:
-            time_part = raw_text.split()[-1]
-            return parse(str(datetime.today().date() + timedelta(days=1)) + ' ' + time_part)
-        elif "Today" in raw_text:
-            time_part = raw_text.split()[-1]
-            return parse(str(datetime.today().date()) + ' ' + time_part)
-        else:
-            return parse(raw_text)
-    except ParserError:
-        return "N/A"
+# Generate a realistic fake profile
+profile = FakeProfile(locale='en-US', browser='chrome', os='windows')
+user_agent = profile.user_agent
 
-def scrape_eventbrite_toronto(search_term="music"):
-    url = f"https://www.eventbrite.ca/d/canada--toronto/{search_term}/"
-    print(f"🔍 Fetching: {url}")
-    response = requests.get(url, timeout=30)
-    
-    print("\n🖨️ Page HTML:\n")
-    print(response.text)
+options = uc.ChromeOptions()
+options.add_argument(f'user-agent={user_agent}')
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-blink-features=AutomationControlled')
+options.add_argument('--headless=new')  # Remove if you want visual debugging
 
-    soup = BeautifulSoup(response.content, "html.parser")
-    events = soup.find_all("div", class_="search-event-card-wrapper")
+driver = uc.Chrome(options=options)
+url = "https://www.eventbrite.ca/d/canada--toronto/events/"
+driver.get(url)
 
-    results = []
-    for e in events:
-        try:
-            title = e.find("div", class_="eds-is-hidden-accessible").get_text(strip=True)
-            date_raw = e.select_one(".eds-event-card-content__sub-title")
-            date = parse_event_date(date_raw.get_text(strip=True)) if date_raw else "N/A"
-            location = e.find("div", attrs={"data-subcontent-key": "location"}).get_text(strip=True).split("•")[-1]
-            link = e.find("a", class_="eds-event-card-content__action-link")["href"]
+# Log the page title and source for debugging
+print("Page Title:", driver.title)
+with open("eventbrite_fakeprofile.html", "w", encoding="utf-8") as f:
+    f.write(driver.page_source)
 
-            results.append({
-                "title": title,
-                "date": date,
-                "location": location,
-                "url": link
-            })
-        except Exception as ex:
-            print("⚠️ Skipping event due to parsing error:", ex)
+# Extract some events for testing
+time.sleep(5)
+soup = BeautifulSoup(driver.page_source, "lxml")
+events = soup.select("li[data-testid='event-card']")
+print(f"Found {len(events)} event cards.")
 
-    return results
+for e in events[:5]:  # Print first 5 for brevity
+    title = e.select_one("h3")
+    print("Title:", title.text.strip() if title else "N/A")
 
-def save_as_html(events, filename="eventbrite_simple_test.html"):
-    html = "<h2>Toronto Eventbrite Events</h2><ul>"
-    for e in events:
-        html += f"<li><a href='{e['url']}'>{e['title']}</a> – {e['date']} – {e['location']}</li>"
-    html += "</ul>"
-
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(html)
-    print(f"✅ File saved: {filename}")
-
-if __name__ == "__main__":
-    events = scrape_eventbrite_toronto()
-    if events:
-        save_as_html(events)
-    else:
-        print("😕 No events found.")
-
+driver.quit()
