@@ -65,7 +65,9 @@ def scrape_eventbrite_toronto():
     return all_events
 
 def generate_html(events):
-    friday, sunday = get_upcoming_weekend_dates()
+    dates = get_upcoming_weekend_dates()
+    friday = dates[0]
+    sunday = dates[-1]
     html = f"<h2>Toronto Weekend Events – {friday.strftime('%b %d')} to {sunday.strftime('%b %d')}</h2><ul>"
     for e in events:
         html += f"<li><a href='{e['url']}'>{e['title']}</a> – {e['date']} – {e['location']}</li>"
@@ -81,4 +83,5 @@ if __name__ == "__main__":
     events = scrape_eventbrite_toronto()
     html = generate_html(events)
     save_html_file(html)
+
 
