@@ -215,7 +215,8 @@ async def scrape_eventbrite(page):
         f"&render_js=true"
         f"&premium_proxy=true"
     )
-    
+
+    print(proxy_url)
     await page.goto(proxy_url)
     print(await page.content())
 
@@ -313,16 +314,7 @@ async def aggregate_events():
     all_events = []
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(
-            headless=False,
-            proxy={
-                "server": "198.23.239.134:6540",
-                "username": "gspobvsx",
-                "password": "txs7bgx3vdfq"
-            }
-            
-            
-        )
+        browser = await p.chromium.launch(headless=False)
         page = await browser.new_page()
         all_events += await scrape_eventbrite(page)
 
@@ -352,6 +344,7 @@ async def aggregate_events():
 
 if __name__ == "__main__":
     asyncio.run(aggregate_events())
+
 
 
 
