@@ -4,6 +4,9 @@ bs4
 lxml
 requests
 python-dateutil
+playwright
+playwright-stealth
+beautifulsoup4
 
 
 
