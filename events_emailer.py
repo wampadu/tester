@@ -5,11 +5,12 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import html
 import smtplib
+import asyncio
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
-from playwright_stealth import stealth_sync
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
+from playwright_stealth import stealth_async
 
 # === Calculate Upcoming Friday–Sunday Dates ===
 def get_upcoming_weekend_dates():
@@ -29,55 +30,55 @@ def generate_html(events):
     return html_output
 
 # === Scraper ===
-def scrape_eventbrite(page):
+async def scrape_eventbrite(page):
     print("🔍 Scraping Eventbrite...")
-    stealth_sync(page)
+    await stealth_async(page)
     events = []
     dates = get_upcoming_weekend_dates()
     start_str = dates[0].strftime("%Y-%m-%d")
     end_str = dates[-1].strftime("%Y-%m-%d")
     url = f"https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
-    page.goto(url)
+    await page.goto(url)
 
     retries = 0
     prev_height = 0
     while retries < 5:
-        page.mouse.wheel(0, random.randint(3000, 6000))
-        page.wait_for_timeout(random.randint(1000, 2000))
-        curr_height = page.evaluate("document.body.scrollHeight")
+        await page.mouse.wheel(0, random.randint(3000, 6000))
+        await page.wait_for_timeout(random.randint(1000, 2000))
+        curr_height = await page.evaluate("document.body.scrollHeight")
         if curr_height == prev_height:
             retries += 1
         else:
             retries = 0
             prev_height = curr_height
 
-    cards = page.query_selector_all("li [data-testid='search-event']")
+    cards = await page.query_selector_all("li [data-testid='search-event']")
     print(f"🧾 Found {len(cards)} event cards on this page.")
 
     for card in cards:
         try:
-            title_el = card.query_selector("h3")
-            title = title_el.inner_text().strip() if title_el else "N/A"
+            title_el = await card.query_selector("h3")
+            title = await title_el.inner_text() if title_el else "N/A"
 
-            date_el = card.query_selector("p:nth-of-type(1)")
-            date_text = date_el.inner_text().strip() if date_el else "N/A"
+            date_el = await card.query_selector("p:nth-of-type(1)")
+            date_text = await date_el.inner_text() if date_el else "N/A"
 
-            img_el = card.query_selector("img.event-card-image")
-            img_url = img_el.get_attribute("src") if img_el else ""
+            img_el = await card.query_selector("img.event-card-image")
+            img_url = await img_el.get_attribute("src") if img_el else ""
 
-            link_el = card.query_selector("a.event-card-link")
-            link = link_el.get_attribute("href") if link_el else ""
+            link_el = await card.query_selector("a.event-card-link")
+            link = await link_el.get_attribute("href") if link_el else ""
 
-            price_el = card.query_selector("div[class*='priceWrapper'] p")
-            price = price_el.inner_text().strip() if price_el else "Free"
+            price_el = await card.query_selector("div[class*='priceWrapper'] p")
+            price = await price_el.inner_text() if price_el else "Free"
 
             events.append({
-                "title": title,
-                "date": date_text,
+                "title": title.strip(),
+                "date": date_text.strip(),
                 "description": "",
                 "image": img_url,
                 "url": link,
-                "price": price,
+                "price": price.strip(),
                 "source": "Eventbrite"
             })
         except Exception as e:
@@ -109,15 +110,15 @@ def send_email_with_attachment(to_email, subject, html_path):
     print("📧 Email sent!")
 
 # === Main Runner ===
-def main():
+async def main():
     dates = get_upcoming_weekend_dates()
     print(f"📆 Scraping for: {[d.strftime('%Y-%m-%d') for d in dates]}")
     all_events = []
 
     user_data_dir = tempfile.mkdtemp()
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch_persistent_context(
+    async with async_playwright() as p:
+        browser = await p.chromium.launch_persistent_context(
             user_data_dir=user_data_dir,
             headless=False,
             args=[
@@ -140,21 +141,19 @@ def main():
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
 
-        page = browser.new_page()
+        page = await browser.new_page()
 
-        # Optional: Block bot-detection scripts
-        page.route("**/*", lambda route, request: (
-            route.abort() if any(x in request.url for x in ["captcha", "botd", "challenge"]) else route.continue_()
+        await page.route("**/*", lambda route, request: (
+            asyncio.create_task(route.abort()) if any(x in request.url for x in ["captcha", "botd", "challenge"]) else asyncio.create_task(route.continue_())
         ))
 
-        # Optional: Human-like movement
-        page.mouse.move(random.randint(100, 500), random.randint(100, 500))
-        page.wait_for_timeout(random.randint(300, 700))
-        page.keyboard.type("Hello Eventbrite")
-        page.wait_for_timeout(random.randint(500, 900))
+        await page.mouse.move(random.randint(100, 500), random.randint(100, 500))
+        await page.wait_for_timeout(random.randint(300, 700))
+        await page.keyboard.type("Hello Eventbrite")
+        await page.wait_for_timeout(random.randint(500, 900))
 
-        all_events += scrape_eventbrite(page)
-        browser.close()
+        all_events += await scrape_eventbrite(page)
+        await browser.close()
 
     seen_titles = set()
     deduped_events = []
@@ -177,4 +176,4 @@ def main():
     )
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
