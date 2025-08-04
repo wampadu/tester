@@ -21,7 +21,7 @@ jobs:
     - name: 📦 Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install playwright beautifulsoup4 python-dotenv playwright-stealth
+        pip install playwright beautifulsoup4 requests python-dotenv playwright-stealth
 
     - name: 🔧 Install Playwright Browsers
       run: |
