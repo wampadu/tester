@@ -119,9 +119,22 @@ def main():
 
     with sync_playwright() as p:
         browser = p.chromium.launch_persistent_context(
-            user_data_dir=user_data_dir,
-            headless=True,
-            args=["--no-sandbox", "--disable-dev-shm-usage"]
+            user_data_dir="/tmp/profile",
+            headless=False,
+            args=[
+              "--disable-blink-features=AutomationControlled",
+              "--disable-dev-shm-usage",
+              "--no-sandbox",
+              "--disable-extensions",
+              "--disable-infobars",
+              "--lang=en-US,en",
+              "--window-size=1920,1080",
+              "--start-maximized",
+              "--font-render-hinting=none",
+              "--disable-gpu",
+              "--hide-scrollbars",
+              "--mute-audio"
+            ]
         )
         page = browser.new_page()
         all_events += scrape_eventbrite(page)
@@ -149,4 +162,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
