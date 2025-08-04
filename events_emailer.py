@@ -26,63 +26,82 @@ def generate_html(events):
     html_output += "</ul></body></html>"
     return html_output
 
-# === Scrape Eventbrite via ScraperAPI ===
+# === Scrape Eventbrite via ScraperAPI with pagination ===
 def scrape_eventbrite():
     api_key = "46f16739ebbc381529ebfd21f01061dd"
+    base_url = "https://www.eventbrite.ca/d/canada--toronto/events/"
     events = []
+
     dates = get_upcoming_weekend_dates()
     start_str = dates[0].strftime("%Y-%m-%d")
     end_str = dates[-1].strftime("%Y-%m-%d")
 
-    url = f"https://www.eventbrite.ca/d/canada--toronto/events/?start_date={start_str}&end_date={end_str}"
-    payload = {'api_key': api_key, 'url': url}
+    page_num = 1
+    seen_urls = set()
 
-    # Retry logic
-    for attempt in range(3):
-        response = requests.get("http://api.scraperapi.com", params=payload)
-        if response.status_code == 200:
+    while True:
+        url = f"{base_url}?start_date={start_str}&end_date={end_str}&page={page_num}"
+        payload = {'api_key': api_key, 'url': url}
+        print(f"🌐 Fetching page {page_num}...")
+
+        for attempt in range(3):
+            try:
+                res = requests.get("http://api.scraperapi.com", params=payload, timeout=15)
+                if res.status_code == 200:
+                    break
+                else:
+                    print(f"⚠️ Retry {attempt+1}/3 failed: Status {res.status_code}")
+            except Exception as e:
+                print(f"⚠️ Request error: {e}")
+            time.sleep(2)
+        else:
+            print("❌ Failed after retries. Ending pagination.")
             break
-        print(f"🔁 Retry {attempt+1}/3 failed with status: {response.status_code}")
-        time.sleep(2)
-    else:
-        print("❌ ScraperAPI failed after retries")
-        return events
 
-    print(response.text)
-    soup = BeautifulSoup(response.text, "html.parser")
-    cards = soup.select("li[data-testid='search-event']")
-    for card in cards:
-        try:
-            title_el = card.select_one("h3")
-            title = title_el.get_text(strip=True) if title_el else "N/A"
+        soup = BeautifulSoup(res.text, "html.parser")
+        cards = soup.select("li[data-testid='search-event']")
+        print(f"🧾 Found {len(cards)} events on page {page_num}.")
 
-            date_el = card.select_one("p")
-            date_text = date_el.get_text(strip=True) if date_el else "N/A"
+        if not cards:
+            break
 
-            img_el = card.select_one("img.event-card-image")
-            img_url = img_el['src'] if img_el else ""
+        for card in cards:
+            try:
+                title_el = card.select_one("h3")
+                title = title_el.get_text(strip=True) if title_el else "N/A"
 
-            link_el = card.select_one("a.event-card-link")
-            link = link_el['href'] if link_el else ""
-            if link and link.startswith("/"):
-                link = "https://www.eventbrite.ca" + link
+                date_el = card.select_one("p")
+                date_text = date_el.get_text(strip=True) if date_el else "N/A"
 
-            price_el = card.select_one("div[class*='priceWrapper'] p")
-            price = price_el.get_text(strip=True) if price_el else "Free"
+                img_el = card.select_one("img.event-card-image")
+                img_url = img_el['src'] if img_el else ""
 
-            events.append({
-                "title": title,
-                "date": date_text,
-                "description": "",
-                "image": img_url,
-                "url": link,
-                "price": price,
-                "source": "Eventbrite"
-            })
-        except Exception as e:
-            print("⚠️ Error parsing event:", e)
+                link_el = card.select_one("a.event-card-link")
+                link = link_el['href'] if link_el else ""
+                if link.startswith("/"):
+                    link = "https://www.eventbrite.ca" + link
 
-    print(f"🧠 Total scraped from Eventbrite: {len(events)}")
+                price_el = card.select_one("div[class*='priceWrapper'] p")
+                price = price_el.get_text(strip=True) if price_el else "Free"
+
+                if link not in seen_urls:
+                    events.append({
+                        "title": title,
+                        "date": date_text,
+                        "description": "",
+                        "image": img_url,
+                        "url": link,
+                        "price": price,
+                        "source": "Eventbrite"
+                    })
+                    seen_urls.add(link)
+            except Exception as e:
+                print("⚠️ Card parsing failed:", e)
+
+        page_num += 1
+        time.sleep(1)
+
+    print(f"✅ Total events scraped: {len(events)}")
     return events
 
 # === Email ===
@@ -105,7 +124,6 @@ def send_email_with_attachment(to_email, subject, html_path):
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
         server.login(from_email, app_password)
         server.send_message(msg)
-
     print("📧 Email sent!")
 
 # === Main ===
@@ -114,7 +132,7 @@ def main():
     print(f"📆 Scraping for: {[d.strftime('%Y-%m-%d') for d in dates]}")
     all_events = scrape_eventbrite()
 
-    # Deduplicate
+    # Dedup by title (extra layer)
     seen_titles = set()
     deduped_events = []
     for event in all_events:
@@ -124,14 +142,12 @@ def main():
             deduped_events.append(event)
     all_events = deduped_events
 
-    # Save HTML
     html_output = generate_html(all_events)
     output_path = "weekend_events_toronto.html"
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html_output)
     print("✅ File saved:", output_path)
 
-    # Send email
     send_email_with_attachment(
         to_email=os.getenv("EMAIL_TO"),
         subject=f"🎉 Toronto Weekend Events – {dates[0].strftime('%B %d')}-{dates[-1].strftime('%d, %Y')}",
@@ -140,4 +156,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
