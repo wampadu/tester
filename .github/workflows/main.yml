@@ -1,10 +1,28 @@
-services:
-  - type: cron
-    name: toronto-events-render-cron
-    schedule: "0 14 * * 5"  # Every Friday at 10 AM Toronto time (14:00 UTC)
-    env: python
-    plan: free
-    buildCommand: |
-      pip install -r requirements.txt
-      playwright install --with-deps
-    startCommand: xvfb-run -a python events_emailer.py
+name: Toronto Events Emailer
+
+on:
+  schedule:
+    - cron: '0 14 * * 5'  # 14:00 UTC every Friday (10 AM Toronto)
+  workflow_dispatch:  # allows manual trigger from GitHub UI
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps
+
+      - name: Run script
+        run: |
+          xvfb-run -a python events_emailer.py
