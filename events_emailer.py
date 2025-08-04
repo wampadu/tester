@@ -10,7 +10,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
 from playwright.async_api import async_playwright
-from playwright_stealth import stealth_async
 
 # === Calculate Upcoming Friday–Sunday Dates ===
 def get_upcoming_weekend_dates():
@@ -177,3 +176,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
