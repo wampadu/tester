@@ -1,7 +1,5 @@
 import os
 import random
-from playwright.sync_api import sync_playwright
-from playwright_stealth import stealth_sync
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import html
@@ -146,3 +144,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
