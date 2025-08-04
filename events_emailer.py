@@ -220,7 +220,7 @@ async def scrape_eventbrite(page):
 
     print(proxy_url)
     await page.goto(proxy_url)
-    print(await page.content())
+    #print(await page.content())
 
     while True:
         print("🔄 Scrolling to load events on current page...")
@@ -346,6 +346,7 @@ async def aggregate_events():
 
 if __name__ == "__main__":
     asyncio.run(aggregate_events())
+
 
 
 
